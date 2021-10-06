@@ -1,0 +1,277 @@
+/*Global variable - needed in multiple functions*/
+var programArray = [];
+
+/*Function to initialise and parse data*/
+function init(url) {
+
+    var resp;
+    var xmlHttp;
+
+    resp = '';
+    /*Needed if data hosted on server*/
+    /*Event occurs HTTPRequest is sent
+    Sever processes HTTPRequest and sends back to browser
+    Javascript is used to process data
+    */
+    xmlHttp = new XMLHttpRequest();
+
+    if (xmlHttp != null) {
+        xmlHttp.open("GET", url, false);
+        xmlHttp.send(null);
+        resp = xmlHttp.responseText;
+    }
+
+    var jsonResp = JSON.parse(resp);
+
+    //run through all topics (data has topics and programs inside each topic)
+    for (i = 0; i < jsonResp.topics.length; i++) {
+        var topic = jsonResp.topics[i];
+
+        //Create the expandable button for each topic
+        var topicButton = document.createElement('button');
+        //Set its CSS class
+        topicButton.setAttribute("class", "sort_type_item");
+        //Add a little up arrow and the topic name to button
+        //TODO have the symbol change on close 
+        topicButton.appendChild(document.createTextNode("▲ " + topic.name));
+        //add each button to the already defined programs div with <body> element
+        document.getElementById("programs").appendChild(topicButton);
+
+        //Create a div for all the content to live
+        var topicContentDiv = document.createElement('div');
+        topicContentDiv.setAttribute("class", "content");
+
+        //Create an image element for the topic image
+        var topicImage = document.createElement('img');
+        topicImage.setAttribute("src", topic.cover_image);
+        topicImage.setAttribute("class", " col-md-4 col-xs-12 topic_img");
+        //Float right so the programs can fit on the left
+        topicImage.setAttribute("style", "float: right");
+
+        //Add image to the content div
+        topicContentDiv.appendChild(topicImage);
+        //Add the content div to the already defined programs div in the <body> element
+        document.getElementById("programs").appendChild(topicContentDiv);
+
+        //For each topic, create a div for all the programs
+        var topicProgramsDiv = document.createElement('div');
+        //Use bootstrap css to fix the size at 2/3rd of the width
+        topicProgramsDiv.setAttribute("class", "programs col-md-8 col-xs-12");
+
+        //For all the programs in each topic
+        for (j = 0; j < topic.programs.length; j++) {
+            //Extra information taken from the parent topic for each program
+            //Used for the sort functions so that the JSON doesn't need to be parsed again and the user can sort by topic again
+            topic.programs[j]["topic"] = topic.name;
+            topic.programs[j]["topic_cover_image"] = topic.cover_image;
+            //Add to a global programs array
+            programArray.push(topic.programs[j]);
+            //Add a div for each program
+            var programItemDiv = document.createElement('div');
+            //Create a unique id
+            //THIS ASSUMES THAT THE PROGRAM IDS ARE UNIQUE ACCROSS ALL DATA
+            programItemDiv.setAttribute("id", "program" + topic.programs[j].id);
+
+            //Create text per title, time and location
+            var programTitleText = document.createElement('p');
+            programTitleText.innerHTML = topic.programs[j].title;
+            var programLocationText = document.createElement('p');
+            programLocationText.innerHTML = topic.programs[j].location.title;
+            var programStartingTimeText = document.createElement('p');
+            programStartingTimeText.innerHTML = topic.programs[j].start_time;
+
+            programItemDiv.appendChild(programTitleText);
+            programItemDiv.appendChild(programStartingTimeText);
+            programItemDiv.appendChild(programLocationText);
+
+
+            //Add a line between each program
+            var line = document.createElement('hr');
+            topicProgramsDiv.appendChild(line);
+            topicProgramsDiv.appendChild(programItemDiv);
+        }
+
+        // Add the div containing all the programs to the topic div
+        topicContentDiv.appendChild(topicProgramsDiv);
+
+    }
+
+    //Set up the sort by buttons
+    setupbuttons();
+    //Set the matching inputs search bar
+    matchingInputs(document.getElementById("program_input"), programArray);
+
+}
+
+/*Function to display matching inputs*/
+function matchingInputs(input, array) {
+
+    input.addEventListener("input", function (e) {
+
+        var inputValue = input.value;
+
+        //Closes the matching container (dropdown)
+        CloseMatchingContainer();
+
+        //Add a div for all the programs
+        var programContainer = document.createElement("div");
+        programContainer.setAttribute("class", "matching_input_items");
+        //matchingInputs is called only when the event is fired (on input)
+        this.parentNode.appendChild(programContainer);
+
+        for (i = 0; i < array.length; i++) {
+            if (inputValue != "" && array[i].title.substr(0, inputValue.length).toUpperCase() == inputValue.toUpperCase()) {
+                //declared as let and want to be lost after use
+                //from the array create in the initalise function
+                let programTitle = array[i].title;
+                let programId = array[i].id;
+
+                //Add a div for each matching program
+                let matchingInputContainer = document.createElement("div");
+                //Create a link to its unique ID
+                matchingInputLink = document.createElement("a");
+                matchingInputLink.setAttribute("href", "#program" + programId)
+
+                //The typed input - highlighted
+                let inputProgramName = document.createElement("p");
+                inputProgramName.setAttribute("class", "input_program_name");
+                //Add remaining text of the matched program name
+                inputProgramName.innerHTML = programTitle.substr(0, inputValue.length);
+                matchingInputLink.appendChild(inputProgramName);
+                matchingInputLink.innerHTML += programTitle.substr(inputValue.length, programTitle.length);
+                //Add the complete link
+                matchingInputContainer.appendChild(matchingInputLink);
+                programContainer.appendChild(matchingInputContainer);
+            }
+        }
+    });
+
+    // Click somewhere else to close the matching container
+    document.addEventListener("click", function (event) {
+        CloseMatchingContainer(event.target);
+    });
+
+    function CloseMatchingContainer(element) {
+        matchingInputContainer = document.getElementsByClassName("input_program_name");
+        for (var i = 0; i < matchingInputContainer.length; i++) {
+            if (element != input && element != matchingInputContainer[i]) {
+                matchingInputContainer[i].parentNode.removeChild(matchingInputContainer[i]);
+            }
+        }
+    }
+
+}
+
+
+/*Function to set up the collapsable buttons*/
+function setupbuttons() {
+    //create the collapsables
+    var sortTypeItems = document.getElementsByClassName("sort_type_item");
+    var i;
+
+    for (i = 0; i < sortTypeItems.length; i++) {
+        //"click" is the type of event
+        sortTypeItems[i].addEventListener("click", function () {
+            this.classList.toggle("active");
+            //Next sibling element after each element with class = "topic" 
+            var content = this.nextElementSibling;
+            if (content.style.display === "none") {
+                content.style.display = "block";
+            } else {
+                content.style.display = "none";
+            }
+        });
+    }
+
+
+}
+
+/*Function to order the data by either location, start time or department*/
+function sort(sortType) {
+
+    function normaliseCompare(a, b) {
+        if (a.id < b.id) {
+            return -1;
+        }
+        if (a.id > b.id) {
+            return 1;
+        }
+        return 0;
+    }
+
+    function compare(a, b) {
+        if (a[sortType] < b[sortType]) {
+            return -1;
+        }
+        if (a[sortType] > b[sortType]) {
+            return 1;
+        }
+        return 0;
+    }
+
+    programArray.sort(normaliseCompare);
+    programArray.sort(compare);
+
+    document.getElementById("programs").innerHTML = "<br/>";
+
+    for (i = 0; i < programArray.length; i++) {
+        var programItemDiv = document.createElement('div');
+        programItemDiv.setAttribute("id", "program" + programArray[i].id);
+
+        var programTitleText = document.createElement('p');
+        programTitleText.innerHTML = programArray[i].title;
+        var programLocationText = document.createElement('p');
+        programLocationText.innerHTML = programArray[i].location.title;
+        var programStartingTimeText = document.createElement('p');
+        programStartingTimeText.innerHTML = programArray[i].start_time;
+
+        programItemDiv.appendChild(programTitleText);
+        programItemDiv.appendChild(programStartingTimeText);
+        programItemDiv.appendChild(programLocationText);
+
+        if (i == 0 || programArray[i - 1][sortType] != programArray[i][sortType]) {
+            if (document.contains(sortTypeItemContentDiv)) {
+                sortTypeItemContentDiv.appendChild(sortTypeItemProgramsDiv);
+                document.getElementById("programs").appendChild(sortTypeItemContentDiv);
+            }
+
+            var sortTypeItemContentDiv = document.createElement('div');
+            sortTypeItemContentDiv.setAttribute("class", "content");
+
+            var sortTypeItemProgramsDiv = document.createElement('div');
+            sortTypeItemProgramsDiv.setAttribute("class", "programs");
+
+            var sortTypeItemButton = document.createElement('button');
+            sortTypeItemButton.setAttribute("class", "sort_type_item");
+
+            document.getElementById("programs").appendChild(sortTypeItemButton);
+
+            var sortTypeItemImage = document.createElement('img');
+            sortTypeItemImage.setAttribute("class", "topic_img");
+
+            switch (sortType) {
+                case 'location_id':
+                    sortTypeItemButton.appendChild(document.createTextNode("▲ " + programArray[i].location.title));
+                    sortTypeItemImage.setAttribute("src", programArray[i].location.cover_image);
+                    break;
+                case 'start_time':
+                    sortTypeItemButton.appendChild(document.createTextNode("▲ " + programArray[i].start_time));
+                    //No image for start time
+                    break;
+                case 'topic':
+                    sortTypeItemButton.appendChild(document.createTextNode("▲ " + programArray[i].topic));
+                    sortTypeItemImage.setAttribute("src", programArray[i].topic_cover_image);
+                    break;
+                default:
+            }
+
+            sortTypeItemContentDiv.appendChild(sortTypeItemImage);
+            document.getElementById("programs").appendChild(sortTypeItemContentDiv);
+        }
+
+        var line = document.createElement('hr');
+        sortTypeItemProgramsDiv.appendChild(line);
+        sortTypeItemProgramsDiv.appendChild(programItemDiv);
+    }
+    setupbuttons();
+}

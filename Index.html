@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Cardiff University Open Day">
+    <title>Cardiff University Open Day</title>
+    <script src="./js/Index.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="css/Index.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+</head>
+
+<body onload="init('./OpenDay.json')">
+
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <img id="icon" src="CardiffUni.png" alt="Cardiff University" />
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Book Open Day</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="header_div">
+        <div id="headings_div">
+            <h1>Cardiff University Open Day</h1>
+            <h3 class="time">TODO Get from JSON</h3>
+        </div>
+        <div id="initial_image_div">
+            <img id="initial_image" src="Cardiff.jpg">
+        </div>
+    </div>
+
+    <div class="row" id="find_course">
+        <div class="col-md-6" style="display: inline-block">
+            <form class="col-md-12;" autocomplete="off" action="/action_page.php">
+                <div style="width:100%;" class="autocomplete">
+                    <input style="width:100%;" id="program_input" type="text" name="presentation" placeholder="Presentation Name...">
+                </div>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <p class="col-md-3 text-centre align-middle">Sort by:</p>
+            <button class="col-md-3 btn btn-default" onclick="sort('location_id')">Location</button>
+            <button class="col-md-3 btn btn-default" onclick="sort('start_time')">Start Time</button>
+            <button class="col-md-3 btn btn-default" onclick="sort('topic')">Department</button>
+        </div>
+    </div>
+
+    <div id="programs"></div>
+
+
+</body></html>
